@@ -1,0 +1,77 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: node-app
+  namespace: ingress-basic
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5 
+  template:
+    metadata:
+      labels:
+        app: node-app
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: azure-vote-front
+        image: aksacrwestus2.azurecr.io/node-app:v1.1
+        ports:
+        - containerPort: 3001
+        resources:
+          requests:
+            cpu: 100m
+          limits:
+            cpu: 100m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-app
+  namespace: ingress-basic
+spec:
+  ports:
+  - port: 80
+    targetPort: 3001
+  selector:
+    app: node-app
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: node-app-ingress
+  namespace: ingress-basic
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: node-app
+          servicePort: 80
+        path: /
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: node-app-ingress2
+  namespace: ingress-basic
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: node-app
+          servicePort: 80
+        path: /foo(\/?)(.*)        
